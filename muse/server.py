@@ -47,8 +47,9 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 ]
             })
             return
-        if p in ("/", "/health"):
-            self._json({"status": "running", "service": "muse.ai Bridge Server"})
+        if p in ("/", "/health", "/status"):
+            is_ready = bool(BridgeHandler.client and BridgeHandler.client.is_ready)
+            self._json({"ok": True, "status": "running", "service": "muse.ai Bridge Server", "ready": is_ready})
             return
         self._json({"error": "Not found"}, 404)
 
@@ -113,10 +114,73 @@ class BridgeHandler(BaseHTTPRequestHandler):
             self._json(response_data)
             return
 
+        if p in ("/api/ask",):
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length).decode("utf-8", errors="replace")
+            try:
+                req = json.loads(raw)
+            except Exception:
+                self._json({"error": "Invalid JSON"}, 400)
+                return
+            prompt = req.get("prompt", "")
+            timeout = int(req.get("timeout", 60))
+            if not prompt:
+                self._json({"error": "prompt is required"}, 400)
+                return
+            if not BridgeHandler.client:
+                BridgeHandler.client = MuseClient(headless=True)
+            res = BridgeHandler.client.chat(prompt, timeout=timeout)
+            self._json(res, 200 if res.get("ok") else 500)
+            return
+
+        if p in ("/api/generate-image", "/v1/images/generations"):
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length).decode("utf-8", errors="replace")
+            try:
+                req = json.loads(raw)
+            except Exception:
+                self._json({"error": "Invalid JSON"}, 400)
+                return
+            prompt = req.get("prompt", "")
+            out_path = req.get("out_path") or req.get("output_path")
+            ref_image = req.get("ref_image") or req.get("image")
+            timeout = int(req.get("timeout", 90))
+            if not prompt:
+                self._json({"error": "prompt is required"}, 400)
+                return
+            if not BridgeHandler.client:
+                BridgeHandler.client = MuseClient(headless=True)
+            res = BridgeHandler.client.image(prompt, out_path=out_path, ref_image=ref_image, timeout=timeout)
+            self._json(res, 200 if res.get("ok") else 500)
+            return
+
+        if p in ("/api/generate-video", "/v1/videos/generations"):
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length).decode("utf-8", errors="replace")
+            try:
+                req = json.loads(raw)
+            except Exception:
+                self._json({"error": "Invalid JSON"}, 400)
+                return
+            prompt = req.get("prompt", "")
+            out_path = req.get("out_path") or req.get("output_path")
+            ref_image = req.get("ref_image") or req.get("image")
+            timeout = int(req.get("timeout", 120))
+            if not prompt:
+                self._json({"error": "prompt is required"}, 400)
+                return
+            if not BridgeHandler.client:
+                BridgeHandler.client = MuseClient(headless=True)
+            res = BridgeHandler.client.video(prompt, out_path=out_path, ref_image=ref_image, timeout=timeout)
+            self._json(res, 200 if res.get("ok") else 500)
+            return
+
         self._json({"error": "Not found"}, 404)
 
 
-def run_server(host="127.0.0.1", port=8765):
+def run_server(host="127.0.0.1", port=None):
+    if port is None:
+        port = int(os.environ.get("MUSE_PORT", 8766))
     ThreadingHTTPServer.allow_reuse_address = True
     server = ThreadingHTTPServer((host, port), BridgeHandler)
     print("=" * 60)

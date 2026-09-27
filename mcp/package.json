@@ -1,0 +1,17 @@
+{
+  "name": "muse-bridge-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server for Muse.ai Bridge (Text, AI Image Generation, AI Video Animation)",
+  "type": "module",
+  "main": "server.mjs",
+  "bin": {
+    "muse-mcp": "./server.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "smoke": "node smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  }
+}

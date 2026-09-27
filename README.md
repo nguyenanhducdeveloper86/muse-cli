@@ -17,8 +17,9 @@ Tích hợp toàn diện **Muse.ai** vào dòng lệnh (CLI), cung cấp cầu n
 - 🎨 **Tạo ảnh AI (`muse image`):** Sinh ảnh chất lượng cao từ văn bản (Text-to-Image) và tự động tải về máy.
 - 🎬 **Tạo video AI (`muse video`):** Sinh video hoạt họa từ văn bản (Text-to-Video).
 - 🖼️ ➔ 🎬 **Tạo video từ ảnh mẫu (`muse video --ref`):** Nhận diện nhân vật từ ảnh tham chiếu và sinh video chuyển động (Image-to-Video).
-- 🔌 **OpenAI-Compatible Bridge Server (`muse serve`):** Mở endpoint `http://127.0.0.1:8765/v1` chuẩn OpenAI để cắm thẳng vào **`omp`**, **Cursor**, **Cline**, hoặc gọi bằng `curl`.
-- ⚡ **Tích hợp sẵn vào `omp`:** Cung cấp model `muse-ai` trong `omp` và Skill `muse-multimedia`.
+- 🔌 **OpenAI-Compatible Bridge Server (`muse serve`):** Mở endpoint `http://127.0.0.1:8766/v1` chuẩn OpenAI để cắm thẳng vào **`omp`**, **Cursor**, **Cline**, hoặc gọi bằng `curl`.
+- 🤖 **Model Context Protocol (MCP) Server (`muse mcp`):** Cung cấp 4 typed tools (`muse_status`, `muse_ask`, `muse_generate_image`, `muse_generate_video`) chuẩn JSON-RPC qua stdio cho **Codex**, **Hermes**, **Claude Desktop**.
+- ⚡ **Tích hợp sẵn vào `omp` & `Hermes`:** Cung cấp model `muse-ai` trong `omp` và Skill `muse-multimedia`.
 
 ---
 
@@ -108,17 +109,38 @@ muse video "Nhân vật này đang mỉm cười và vẫy tay chào" --ref my_c
 Khởi động server cầu nối cục bộ:
 ```bash
 muse serve
-# Mặc định lắng nghe tại: http://127.0.0.1:8765/v1
+# Mặc định lắng nghe tại: http://127.0.0.1:8766/v1
 ```
 
 ### Test nhanh bằng cURL chuẩn OpenAI:
 ```bash
-curl http://127.0.0.1:8765/v1/chat/completions \
+curl http://127.0.0.1:8766/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "muse-ai",
     "messages": [{"role": "user", "content": "Xin chào Muse!"}]
   }'
+```
+
+---
+
+## 🤖 Chế độ MCP Server cho AI Agents (Codex / Hermes / Claude Desktop)
+
+Khởi động MCP Server qua stdio:
+```bash
+muse mcp
+# Hoặc chạy launcher trực tiếp:
+./mcp/mcp-server
+```
+
+### Đăng ký vào Codex:
+```bash
+codex mcp add muse -- /Users/ducna/muse-bridge/mcp/mcp-server
+```
+
+### Đăng ký vào Hermes:
+```bash
+hermes mcp add muse --command node --args /Users/ducna/muse-bridge/mcp/server.mjs <<< "Y"
 ```
 
 ---
@@ -130,7 +152,7 @@ Thêm cấu hình vào `~/.omp/agent/models.yml`:
 ```yaml
 providers:
   muse:
-    baseUrl: http://127.0.0.1:8765/v1
+    baseUrl: http://127.0.0.1:8766/v1
     apiKey: muse-local-key
     api: openai-completions
     models:

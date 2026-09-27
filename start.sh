@@ -25,7 +25,7 @@ if [ ! -f "$PYTHON" ]; then
 fi
 
 if [ $# -eq 0 ]; then
-    echo "Khởi động Muse OpenAI Bridge Server trên cổng 8765..."
+    echo "Khởi động Muse OpenAI Bridge Server trên cổng 8766..."
     exec "$PYTHON" -m muse.cli serve
 else
     exec "$PYTHON" -m muse.cli "$@"

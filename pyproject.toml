@@ -3,16 +3,16 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "muse-bridge"
-version = "0.1.0"
-description = "Unofficial CLI & OpenAI-Compatible Bridge for Muse.ai (Meta AI Personal Agent)"
+name = "muse-cli"
+version = "0.2.0"
+description = "Unofficial CLI, OpenAI Bridge & Model Context Protocol (MCP) Server for Muse.ai"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
     { name = "Duc Nguyen", email = "nguyenanhducdeveloper@gmail.com" }
 ]
-keywords = ["muse", "meta-ai", "openai-bridge", "cli", "ai-agent"]
+keywords = ["muse", "meta-ai", "openai-bridge", "cli", "ai-agent", "mcp", "model-context-protocol", "image-generation", "video-generation"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

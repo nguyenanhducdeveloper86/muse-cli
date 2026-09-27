@@ -6,13 +6,10 @@ This document is specifically designed for autonomous AI agents (such as **omp**
 
 ## 1. System Identity & Capabilities
 
-`muse-bridge` is a local bridge and CLI that exposes **Muse.ai (Meta AI Personal Agent · Project Hatch)** as:
-1. **An OpenAI-compatible LLM provider** (`/v1/chat/completions` at `http://127.0.0.1:8765/v1`, model `muse-ai`).
-2. **A Text-to-Image generator** (`muse image "<prompt>" -o <out.png>`).
-3. **An Image-to-Image generator** (`muse image "<prompt>" --ref <image.png> -o <out.png>`).
-4. **A Text-to-Video generator** (`muse video "<prompt>" -o <out.mp4>`).
-5. **An Image-to-Video generator** (`muse video "<prompt>" --ref <image.png> -o <out.mp4>`).
-
+`muse-bridge` is a local bridge, CLI, and MCP Server that exposes **Muse.ai (Meta AI Personal Agent · Project Hatch)** across 3 modes:
+1. **CLI Mode**: Direct terminal commands (`muse chat`, `muse ask`, `muse image`, `muse video`, `muse login`, `muse status`).
+2. **OpenAI-Compatible HTTP Server Mode** (`muse serve` at `http://127.0.0.1:8766/v1` for OMP, Cursor, Cline, curl).
+3. **Model Context Protocol (MCP) Server Mode** (`muse mcp` via stdio for Codex, Hermes, Claude Desktop).
 ---
 
 ## 2. Agent Bootstrap & Self-Setup Flow
@@ -61,22 +58,22 @@ To use Muse as an LLM model inside `omp`, `Cursor`, `Cline`, or via API:
 
 ### Launch Daemon / Background Server:
 ```bash
-./start.sh serve --port 8765 &
+./start.sh serve --port 8766 &
 ```
-*(Or invoke via python: `python -m muse.server &`)*
+*(Or invoke via python: `python -m muse.cli serve &`)*
 
 ### Verify Server Readiness:
 ```bash
-curl -s http://127.0.0.1:8765/health
-# Expected response: {"status": "running", "service": "muse.ai Bridge Server"}
+curl -s http://127.0.0.1:8766/health
+# Expected response: {"ok": true, "status": "running", "service": "muse.ai Bridge Server", "ready": true}
 
-curl -s http://127.0.0.1:8765/v1/models
+curl -s http://127.0.0.1:8766/v1/models
 # Expected response: {"object": "list", "data": [{"id": "muse-ai", ...}]}
 ```
 
 ### Test Chat Completion:
 ```bash
-curl -s -X POST http://127.0.0.1:8765/v1/chat/completions \
+curl -s -X POST http://127.0.0.1:8766/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "muse-ai",
@@ -93,7 +90,7 @@ Add the following block to `~/.omp/agent/models.yml`:
 ```yaml
 providers:
   muse:
-    baseUrl: http://127.0.0.1:8765/v1
+    baseUrl: http://127.0.0.1:8766/v1
     apiKey: muse-local-key
     api: openai-completions
     models:
@@ -151,4 +148,4 @@ muse video "<animation instructions>" --ref <character_image.png> -o <output_fil
 | `No Muse.ai cookies found!` | `cookies.txt` or `MUSE_COOKIES` missing | Check environment variables or prompt user to run `muse login`. |
 | `Page.goto: Timeout 45000ms exceeded` | Network glitch or slow initial load | Retry once with `wait_until='domcontentloaded'`. |
 | `Video generation timeout` | Large video render takes >60s | Allow up to 120s timeout or check Muse Library on web. |
-| `Address already in use: 8765` | Existing server process running | Identify PID via `lsof -i :8765` and reuse or restart. |
+| `Address already in use: 8766` | Existing server process running | Identify PID via `lsof -i :8766` and reuse or restart. |

@@ -201,6 +201,13 @@ def cmd_serve(args):
     run_server(host=args.host, port=args.port)
 
 
+def cmd_mcp(args):
+    mcp_server_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp", "server.mjs"))
+    if not os.path.exists(mcp_server_path):
+        print(f"❌ Không tìm thấy MCP server tại: {mcp_server_path}", file=sys.stderr)
+        sys.exit(1)
+    os.execvp("node", ["node", mcp_server_path])
+
 def main():
     parser = argparse.ArgumentParser(
         prog="muse",
@@ -239,8 +246,10 @@ def main():
 
     # serve
     p_serve = subparsers.add_parser("serve", help="Khởi động OpenAI-Compatible API Bridge Server")
-    p_serve.add_argument("-p", "--port", type=int, default=8765, help="Cổng server (mặc định: 8765)")
+    p_serve.add_argument("-p", "--port", type=int, default=int(os.environ.get("MUSE_PORT", 8766)), help="Cổng server (mặc định: 8766)")
     p_serve.add_argument("-H", "--host", default="127.0.0.1", help="Địa chỉ bind (mặc định: 127.0.0.1)")
+    # mcp
+    subparsers.add_parser("mcp", help="Khởi động Model Context Protocol (MCP) Server qua stdio cho AI Agents")
 
     args = parser.parse_args()
 
@@ -252,13 +261,14 @@ def main():
         "image": cmd_image,
         "video": cmd_video,
         "serve": cmd_serve,
+        "mcp": cmd_mcp,
     }
 
     if not args.command:
         print("💡 Không có lệnh phụ -> Tự động khởi chạy OpenAI Bridge Server...")
         print("   (Mẹo: Gõ 'muse --help' để xem các lệnh chat, image, video, login)")
         print()
-        run_server(host="127.0.0.1", port=8765)
+        run_server(host="127.0.0.1", port=int(os.environ.get("MUSE_PORT", 8766)))
         return
     fn = dispatch.get(args.command)
     if fn:
