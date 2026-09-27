@@ -1,0 +1,4 @@
+# Dán toàn bộ chuỗi cookie header từ Network tab vào file này
+# Hoặc chạy lệnh: muse login
+# Định dạng ví dụ:
+# datr=xxxx; hatch_native_auth_device=v1%3A...; hatch_sess=xxxx...; hatch_vml=v1%3A...;
