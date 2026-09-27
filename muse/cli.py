@@ -255,9 +255,11 @@ def main():
     }
 
     if not args.command:
-        parser.print_help()
+        print("💡 Không có lệnh phụ -> Tự động khởi chạy OpenAI Bridge Server...")
+        print("   (Mẹo: Gõ 'muse --help' để xem các lệnh chat, image, video, login)")
+        print()
+        run_server(host="127.0.0.1", port=8765)
         return
-
     fn = dispatch.get(args.command)
     if fn:
         fn(args)
