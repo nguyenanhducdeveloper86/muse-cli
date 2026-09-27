@@ -1,4 +1,4 @@
-# 🎭 muse-cli & muse-bridge
+# 🎭 muse-cli
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](https://www.python.org/)
@@ -26,8 +26,8 @@ Tích hợp toàn diện **Muse.ai** vào dòng lệnh (CLI), cung cấp cầu n
 
 ### 1. Clone repository
 ```bash
-git clone https://github.com/nguyenanhducdeveloper86/muse-bridge.git
-cd muse-bridge
+git clone https://github.com/nguyenanhducdeveloper86/muse-cli.git
+cd muse-cli
 ```
 
 ### 2. Cài đặt thư viện
