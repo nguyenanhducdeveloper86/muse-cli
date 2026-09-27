@@ -31,10 +31,18 @@ class MuseClient:
         from playwright.sync_api import sync_playwright
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch(
-                    headless=self.headless,
-                    args=["--disable-blink-features=AutomationControlled"]
-                )
+                launch_args = ["--disable-blink-features=AutomationControlled"]
+                try:
+                    browser = p.chromium.launch(
+                        channel="chrome",
+                        headless=self.headless,
+                        args=launch_args,
+                    )
+                except Exception:
+                    browser = p.chromium.launch(
+                        headless=self.headless,
+                        args=launch_args,
+                    )
                 context = browser.new_context(
                     viewport={"width": 1280, "height": 850},
                     user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
@@ -100,14 +108,24 @@ class MuseClient:
         if not textarea.is_visible():
             time.sleep(1)
 
+        asst_msgs_before = page.locator('[data-hatch-assistant-message-body="true"]').all()
+        last_asst_text_before = asst_msgs_before[-1].inner_text().strip() if asst_msgs_before else ""
+        count_before = len(asst_msgs_before)
         p_before = len(page.locator("p").all())
-        textarea.fill(prompt)
-        time.sleep(0.15)
-        textarea.press("Enter")
 
-        time.sleep(1.5)
+        textarea.fill(str(prompt))
+        time.sleep(0.15)
+        # Try clicking send button if present, else press Enter
+        send_btn = page.locator('button[aria-label="Send"], button[type="submit"]').first
+        if send_btn.is_visible() and send_btn.is_enabled():
+            send_btn.click()
+        else:
+            textarea.press("Enter")
+
+        time.sleep(1.0)
         last_text = ""
         stable_count = 0
+        saw_new_message = False
 
         # Poll until assistant response stabilizes
         deadline = time.time() + timeout
@@ -117,13 +135,17 @@ class MuseClient:
             asst_msgs = page.locator('[data-hatch-assistant-message-body="true"]').all()
             if asst_msgs:
                 cur_text = asst_msgs[-1].inner_text().strip()
-                if cur_text == last_text and len(cur_text) > 0:
-                    stable_count += 1
-                    if stable_count >= 3:
-                        return cur_text
-                else:
-                    last_text = cur_text
-                    stable_count = 0
+                if len(asst_msgs) > count_before or (cur_text and cur_text != last_asst_text_before):
+                    saw_new_message = True
+
+                if saw_new_message:
+                    if cur_text == last_text and len(cur_text) > 0:
+                        stable_count += 1
+                        if stable_count >= 3:
+                            return cur_text
+                    else:
+                        last_text = cur_text
+                        stable_count = 0
             else:
                 paragraphs = page.locator("p").all_inner_texts()
                 if len(paragraphs) > p_before:
@@ -148,7 +170,7 @@ class MuseClient:
             time.sleep(2)
 
         textarea = page.locator('textarea[placeholder="Message"], textarea').first
-        textarea.fill(prompt)
+        textarea.fill(str(prompt))
         time.sleep(0.15)
         textarea.press("Enter")
         deadline = time.time() + timeout
@@ -190,7 +212,7 @@ class MuseClient:
             time.sleep(2)
 
         textarea = page.locator('textarea[placeholder="Message"], textarea').first
-        textarea.fill(prompt)
+        textarea.fill(str(prompt))
         time.sleep(0.2)
         textarea.press("Enter")
 
