@@ -164,10 +164,13 @@ def cmd_image(args):
         print("[!] Vui lòng nhập prompt tạo ảnh.")
         return
     out = args.output or f"muse_{int(time.time())}.png"
-    print(f"Đang yêu cầu Muse tạo ảnh: '{prompt}'...")
+    if args.ref:
+        print(f"Đang yêu cầu Muse tạo ảnh từ ảnh mẫu '{args.ref}': '{prompt}'...")
+    else:
+        print(f"Đang yêu cầu Muse tạo ảnh: '{prompt}'...")
     client = MuseClient(headless=not args.headed)
     try:
-        res = client.image(prompt, out_path=out)
+        res = client.image(prompt, out_path=out, ref_image=args.ref)
         if res.get("ok"):
             print(f"🎉 Tạo ảnh thành công! Đã lưu tại: {res.get('path')}")
         else:
@@ -223,6 +226,7 @@ def main():
     # image
     p_image = subparsers.add_parser("image", help="Tạo ảnh từ văn bản (Text-to-Image)")
     p_image.add_argument("prompt", nargs="+", help="Mô tả bức ảnh cần tạo")
+    p_image.add_argument("-r", "--ref", help="Đường dẫn file ảnh tham chiếu (Image-to-Image)")
     p_image.add_argument("-o", "--output", help="Đường dẫn file ảnh đầu ra (.png)")
     p_image.add_argument("--headed", action="store_true", help="Hiện cửa sổ trình duyệt")
 

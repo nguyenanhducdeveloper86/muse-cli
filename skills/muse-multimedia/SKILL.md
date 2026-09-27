@@ -24,6 +24,15 @@ muse image "<description>" [-o <output.png>]
   muse image "Một chú mèo con phi hành gia trong không gian vũ trụ" -o cat.png
   ```
 
+### Image-to-Image Generation (Reference Image)
+```bash
+muse image "<transformation description>" --ref <input_image.png> [-o <output.png>]
+```
+- Example:
+  ```bash
+  muse image "Biến ảnh này thành phong cách hoạt hình anime 3D" --ref my_avatar.png -o anime_avatar.png
+  ```
+
 ### Text-to-Video Generation
 ```bash
 muse video "<description>" [-o <output.mp4>]

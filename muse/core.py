@@ -73,7 +73,8 @@ class MuseClient:
                         elif cmd == "generate_image":
                             prompt = task.get("prompt", "")
                             out_path = task.get("out_path")
-                            result = self._handle_image_generation(page, prompt, out_path, timeout=task.get("timeout", 90))
+                            ref_image = task.get("ref_image")
+                            result = self._handle_image_generation(page, prompt, out_path, ref_image=ref_image, timeout=task.get("timeout", 90))
                             resp_q.put(result)
 
                         elif cmd == "generate_video":
@@ -137,13 +138,19 @@ class MuseClient:
 
         return last_text or "No response from Muse (timeout)"
 
-    def _handle_image_generation(self, page, prompt, out_path=None, timeout=90):
+    def _handle_image_generation(self, page, prompt, out_path=None, ref_image=None, timeout=90):
         out_path = out_path or f"muse_image_{int(time.time())}.png"
+
+        # If reference image provided, upload it first
+        if ref_image and os.path.exists(ref_image):
+            file_input = page.locator('input[type="file"]').first
+            file_input.set_input_files(os.path.abspath(ref_image))
+            time.sleep(2)
+
         textarea = page.locator('textarea[placeholder="Message"], textarea').first
         textarea.fill(prompt)
         time.sleep(0.15)
         textarea.press("Enter")
-
         deadline = time.time() + timeout
         while time.time() < deadline:
             time.sleep(2)
@@ -233,9 +240,9 @@ class MuseClient:
         self.cmd_queue.put({"cmd": "chat", "prompt": prompt, "timeout": timeout, "resp": q})
         return q.get(timeout=timeout + 5)
 
-    def image(self, prompt, out_path=None, timeout=90):
+    def image(self, prompt, out_path=None, ref_image=None, timeout=90):
         q = queue.Queue()
-        self.cmd_queue.put({"cmd": "generate_image", "prompt": prompt, "out_path": out_path, "timeout": timeout, "resp": q})
+        self.cmd_queue.put({"cmd": "generate_image", "prompt": prompt, "out_path": out_path, "ref_image": ref_image, "timeout": timeout, "resp": q})
         return q.get(timeout=timeout + 5)
 
     def video(self, prompt, out_path=None, ref_image=None, timeout=120):
