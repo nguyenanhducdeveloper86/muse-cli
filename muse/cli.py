@@ -8,27 +8,92 @@ from muse.server import run_server
 
 
 def cmd_login(args):
-    print("=" * 60)
-    print("  🔑 Muse.ai Cookie Setup")
-    print("=" * 60)
-    print("Hướng dẫn lấy cookies từ trình duyệt:")
-    print("1. Mở https://muse.ai/ trên trình duyệt (đã đăng nhập).")
-    print("2. Bấm F12 -> tab Network (hoặc Application -> Cookies).")
-    print("3. Copy chuỗi Cookie header (bắt đầu bằng 'datr=...; hatch_sess=...').")
-    print("=" * 60)
-    try:
-        raw = input("Dán chuỗi cookies vào đây: ").strip()
-    except (KeyboardInterrupt, EOFError):
-        print("\nĐã hủy.")
+    if args.manual:
+        print("=" * 60)
+        print("  🔑 Muse.ai Manual Cookie Setup")
+        print("=" * 60)
+        print("Hướng dẫn lấy cookies từ trình duyệt:")
+        print("1. Mở https://muse.ai/ trên trình duyệt (đã đăng nhập).")
+        print("2. Bấm F12 -> tab Network (hoặc Application -> Cookies).")
+        print("3. Copy chuỗi Cookie header (bắt đầu bằng 'datr=...; hatch_sess=...').")
+        print("=" * 60)
+        try:
+            raw = input("Dán chuỗi cookies vào đây: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nĐã hủy.")
+            return
+
+        if not raw:
+            print("[!] Không có cookie nào được nhập.")
+            return
+
+        saved_path = save_cookies(raw, local=args.local)
+        print(f"✅ Đã lưu cookies thành công vào: {saved_path}")
         return
 
-    if not raw:
-        print("[!] Không có cookie nào được nhập.")
+    # Default: Automatic browser login
+    print("=" * 60)
+    print("  🚀 Muse.ai Auto-Login (Tự động mở trình duyệt & bắt cookies)")
+    print("=" * 60)
+    print("  1. Đang mở trình duyệt Google Chrome...")
+    print("  2. Bạn chỉ cần đăng nhập tài khoản Muse.ai trên cửa sổ vừa mở.")
+    print("  3. Ngay khi đăng nhập xong, hệ thống sẽ tự động lưu cookies!")
+    print("=" * 60)
+
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        try:
+            browser = p.chromium.launch(channel="chrome", headless=False)
+        except Exception:
+            browser = p.chromium.launch(headless=False)
+
+        context = browser.new_context(
+            viewport={"width": 1280, "height": 850},
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+        )
+        page = context.new_page()
+
+        try:
+            page.goto("https://muse.ai/")
+        except Exception:
+            pass
+
+        print("  ⏳ Đang đợi bạn đăng nhập trên trình duyệt...")
+        captured = False
+
+        for _ in range(300):  # 5 minutes timeout
+            try:
+                if page.is_closed():
+                    print("\n[!] Cửa sổ trình duyệt đã bị đóng trước khi hoàn tất.")
+                    break
+
+                cookies = context.cookies(["https://muse.ai", "https://.muse.ai"])
+                has_session = any(c.get("name") in ("hatch_sess", "hatch_vml") for c in cookies)
+
+                if has_session:
+                    time.sleep(2)
+                    cookies = context.cookies(["https://muse.ai", "https://.muse.ai"])
+                    cookie_str = "; ".join(
+                        [f"{c['name']}={c['value']}" for c in cookies if c.get("name") and c.get("value")]
+                    )
+                    saved_path = save_cookies(cookie_str, local=args.local)
+                    print(f"\n🎉 ĐĂNG NHẬP THÀNH CÔNG! Đã tự động bắt và lưu cookies vào: {saved_path}")
+                    captured = True
+                    break
+            except Exception:
+                pass
+            time.sleep(1)
+
+        try:
+            browser.close()
+        except Exception:
+            pass
+
+        if not captured:
+            print("\n[!] Chưa phát hiện phiên đăng nhập.")
+            print("💡 Mẹo: Bạn có thể dùng `muse login --manual` để dán cookies thủ công nếu muốn.")
         return
-
-    saved_path = save_cookies(raw, local=args.local)
-    print(f"✅ Đã lưu cookies thành công vào: {saved_path}")
-
 
 def cmd_status(args):
     print("Kiểm tra kết nối tới Muse.ai...")
@@ -141,10 +206,9 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Lệnh khả dụng")
 
     # login
-    p_login = subparsers.add_parser("login", help="Thiết lập cookies tài khoản Muse.ai")
+    p_login = subparsers.add_parser("login", help="Đăng nhập và tự động bắt cookies tài khoản Muse.ai")
+    p_login.add_argument("--manual", action="store_true", help="Dán chuỗi cookies thủ công thay vì tự động mở trình duyệt")
     p_login.add_argument("--local", action="store_true", help="Lưu cookies vào thư mục hiện tại thay vì ~/.muse/")
-
-    # status
     subparsers.add_parser("status", help="Kiểm tra trạng thái kết nối tới Muse.ai")
 
     # ask

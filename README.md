@@ -47,16 +47,26 @@ ln -sf $(pwd)/start.sh ~/.local/bin/muse
 
 ## 🔑 Thiết lập xác thực (Authentication)
 
-Vì `muse.ai` là nền tảng web cá nhân của Meta AI, công cụ sử dụng chuỗi session cookie từ phiên đăng nhập trình duyệt của bạn:
+### Cách 1: Tự động hoàn toàn (Khuyên dùng — Không cần F12)
+Chỉ cần chạy lệnh:
+```bash
+muse login
+```
+1. Cửa sổ Google Chrome sẽ tự động bật lên tại `https://muse.ai/`.
+2. Bạn chỉ việc đăng nhập tài khoản Muse.ai / Meta của bạn trên cửa sổ web vừa mở.
+3. Ngay khi đăng nhập xong, công cụ sẽ **tự động bắt cookies**, lưu vào `~/.muse/cookies.txt` và tự động đóng trình duyệt lại. **Bạn không cần đụng tới F12 hay copy chuỗi cookie dài dòng.**
 
-1. Mở `https://muse.ai/` trên trình duyệt và đăng nhập.
-2. Nhấn `F12` → tab **Network** (hoặc tab **Application** → **Cookies**).
-3. Copy toàn bộ chuỗi **Cookie header** (bắt đầu bằng `datr=...; hatch_sess=...`).
-4. Chạy lệnh đăng nhập:
-   ```bash
-   muse login
-   ```
-   *Dán chuỗi cookie vừa copy vào và Enter. Token sẽ được lưu an toàn tại `~/.muse/cookies.txt` (hoặc đặt biến môi trường `MUSE_COOKIES`).*
+---
+
+### Cách 2: Nhập thủ công (Dành cho VPS / Headless Server qua SSH)
+Nếu máy chủ của bạn không có màn hình hiển thị:
+```bash
+muse login --manual
+```
++- Mở `https://muse.ai/` trên máy tính cá nhân, nhấn `F12` → tab **Network** (hoặc **Application** → **Cookies**).
++- Copy chuỗi Cookie header và dán vào terminal.
+
+---
 
 Kiểm tra kết nối:
 ```bash
